@@ -1,0 +1,41 @@
+=======================================================
+  LA ROMANA BARBERSHOP - CREDENCIALES Y ACCESOS
+=======================================================
+
+1. BASE DE DATOS EN PRODUCCIÓN (cPanel / WebHost):
+-------------------------------------------------------
+- Servidor (Host):      localhost
+- Nombre Base de Datos: laromana_basededatos
+- Usuario MySQL:        laromana_ronin
+- Contraseña MySQL:     rONIN.ABC.123
+
+2. ACCESOS POR DEFECTO DEL SISTEMA:
+-------------------------------------------------------
+- Panel Administrador (Back-Office):
+    Email:      admin@laromana.cl
+    Contraseña: admin123
+
+- Barbero 1 (Carlos - Master):
+    Email:      carlos@laromana.cl
+    Contraseña: 123456
+
+- Barbero 2 (Luis - Senior):
+    Email:      luis@laromana.cl
+    Contraseña: 123456
+
+- Barbero 3 (Pedro - Junior):
+    Email:      pedro@laromana.cl
+    Contraseña: 123456
+
+- Clientes / Portal de Fidelización:
+    RUT del cliente
+    Contraseña inicial: 123456
+
+3. REPOSITORIO GITHUB:
+-------------------------------------------------------
+- URL Remota: https://github.com/brilan10/La-Romana-Peluqueria.git
+- Rama Principal: main
+
+=======================================================
+Guardado: Septiembre 2026
+=======================================================
