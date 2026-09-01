@@ -81,7 +81,7 @@ if (Test-Path "database_full.sql") {
     Copy-Item -Path "database_full.sql" -Destination "$WebhostDeployDir\database_la_romana.sql" -Force
 }
 
-# Copiar Instrucciones de Despliegue
+# Copiar Instrucciones de Despliegue y Credenciales
 if (Test-Path "INSTRUCCIONES_DEPLOY_WEBHOST.txt") {
     Copy-Item -Path "INSTRUCCIONES_DEPLOY_WEBHOST.txt" -Destination "$DeployDir\INSTRUCCIONES_DEPLOY_WEBHOST.txt" -Force
     Copy-Item -Path "INSTRUCCIONES_DEPLOY_WEBHOST.txt" -Destination "$WebhostDeployDir\INSTRUCCIONES_DEPLOY_WEBHOST.txt" -Force
@@ -89,8 +89,53 @@ if (Test-Path "INSTRUCCIONES_DEPLOY_WEBHOST.txt") {
     Copy-Item -Path "INSTRUCCIONES_DEPLOY_WEBHOST.txt" -Destination "$WebhostDeployDir\INSTRUCCIONES_DESPLIEGUE.txt" -Force
 }
 
+if (Test-Path "CREDENCIALES_PRODUCCION.txt") {
+    Copy-Item -Path "CREDENCIALES_PRODUCCION.txt" -Destination "$DeployDir\CREDENCIALES_PRODUCCION.txt" -Force
+    Copy-Item -Path "CREDENCIALES_PRODUCCION.txt" -Destination "$WebhostDeployDir\CREDENCIALES_PRODUCCION.txt" -Force
+}
+
+# Configurar db.php optimizado para WebHost Chile en las carpetas de despliegue
+$dbProdContent = @'
+<?php
+// db.php - Configuración Oficial para WebHost Chile / Producción
+header("Access-Control-Allow-Origin: *");
+header("Access-Control-Allow-Methods: GET, POST, OPTIONS");
+header("Access-Control-Allow-Headers: Content-Type, Authorization");
+
+if (isset($_SERVER['REQUEST_METHOD']) && $_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
+    http_response_code(200);
+    exit();
+}
+
+$host = 'localhost';
+$db   = 'laromana_basededatos';
+$user = 'laromana_ronin';
+$pass = 'rONIN.ABC.123';
+
+$options = [
+    PDO::ATTR_ERRMODE            => PDO::ERRMODE_EXCEPTION,
+    PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
+    PDO::ATTR_EMULATE_PREPARES   => false,
+];
+
+try {
+    $dsn = "mysql:host=$host;dbname=$db;charset=utf8mb4";
+    $pdo = new PDO($dsn, $user, $pass, $options);
+} catch (\PDOException $e) {
+    http_response_code(500);
+    echo json_encode(["error" => "Error de conexión a la base de datos de WebHost Chile: " . $e->getMessage()]);
+    exit();
+}
+?>
+'@
+
+Set-Content -Path "$DeployDir\backend\db.php" -Value $dbProdContent -Encoding UTF8
+Set-Content -Path "$WebhostDeployDir\backend\db.php" -Value $dbProdContent -Encoding UTF8
+
 Write-Host "`n=================================================" -ForegroundColor Green
-Write-Host "  DESPLIEGUE GENERADO EXITOSAMENTE" -ForegroundColor Green
+Write-Host "  DESPLIEGUE GENERADO EXITOSAMENTE PARA WEBHOST CHILE" -ForegroundColor Green
+Write-Host "  BD Produccion: laromana_basededatos (laromana_ronin)" -ForegroundColor Green
 Write-Host "  Carpeta lista en: $DeployDir" -ForegroundColor Green
 Write-Host "=================================================" -ForegroundColor Green
+
 
