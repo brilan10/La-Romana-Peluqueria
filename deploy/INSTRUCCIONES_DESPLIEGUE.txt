@@ -1,0 +1,161 @@
+================================================================================
+          MANUAL E INSTRUCCIONES DE DESPLIEGUE - LA ROMANA PELUQUERÍA
+                           (FORMATO WEBHOST / cPANEL / APACHE)
+================================================================================
+
+Este documento explica en detalle cómo está estructurada la carpeta de despliegue
+(`deploy/` y `webhost_deploy/`), cómo subirla a tu proveedor de hosting (WebHost Chile,
+cPanel, Hostinger, VPS, etc.) y cómo mantener la aplicación en producción.
+
+================================================================================
+1. ARQUITECTURA DEL SISTEMA
+================================================================================
+- Frontend: Single Page Application (SPA) construida con React, Vite y Recharts.
+- Backend: API REST modular en PHP (sin frameworks pesados, máxima compatibilidad).
+- Base de Datos: MySQL / MariaDB (`la_romana`) con soporte UTF8MB4.
+- Enrutamiento Web: Archivo `.htaccess` con Apache mod_rewrite para redirigir
+  las vistas SPA a `index.html` y permitir acceso directo a `/backend/` y assets.
+
+================================================================================
+2. ESTRUCTURA EXACTA QUE DEBE TENER LA CARPETA EN EL SERVIDOR (/public_html/)
+================================================================================
+Al subir los archivos a la carpeta raíz de tu hosting (generalmente `/public_html/` o
+`/httpdocs/`), la estructura debe quedar exactamente de la siguiente manera:
+
+  /public_html/
+  │
+  ├── index.html                       <- Archivo principal de la aplicación React
+  ├── .htaccess                        <- Reglas Apache para rutas SPA y API
+  ├── database_la_romana.sql           <- Dump completo de la base de datos
+  ├── INSTRUCCIONES_DEPLOY_WEBHOST.txt <- Este manual de instrucciones
+  │
+  ├── assets/                          <- JS y CSS minificados de alto rendimiento
+  │     ├── index-XXXXX.js
+  │     └── index-XXXXX.css
+  │
+  ├── backend/                         <- Endpoints y controladores PHP
+  │     ├── db.php                     <- CONEXIÓN A BASE DE DATOS (EDITAR AQUÍ)
+  │     ├── api.php                    <- API para Clientes y Barberos POS
+  │     ├── admin_api.php              <- API para Dashboard Administrativo y Liquidaciones
+  │     ├── index.php                  <- Endpoint raíz / verificador
+  │     ├── setup_db.php               <- Migración y creador de tablas
+  │     └── seed_month.php             <- Poblador de datos de prueba
+  │
+  ├── botones/                         <- Imágenes de botones y estilo visual
+  ├── fotos/                           <- Fotos de catálogo y personal
+  ├── manifest.json                    <- Manifiesto PWA para instalación móvil
+  └── favicon.svg                      <- Ícono de la pestaña del navegador
+
+================================================================================
+3. PASO A PASO PARA EL DESPLIEGUE EN PRODUCCIÓN
+================================================================================
+
+--------------------------------------------------------------------------------
+PASO 1: SUBIR EL CONTENIDO AL SERVIDOR
+--------------------------------------------------------------------------------
+1. Abre el Administrador de Archivos de tu cPanel o conéctate vía FTP (FileZilla).
+2. Dirígete a la carpeta `public_html/`.
+3. Sube todos los archivos y carpetas que están adentro de `deploy/` (o `webhost_deploy/`).
+   *Consejo:* Puedes comprimir el contenido de `deploy/` en un archivo `.zip`,
+   subirlo a `public_html/` y extraerlo allí mismo para mayor rapidez.
+
+--------------------------------------------------------------------------------
+PASO 2: CREAR E IMPORTAR LA BASE DE DATOS
+--------------------------------------------------------------------------------
+1. En cPanel, ve a la sección "Bases de datos MySQL".
+2. Crea una nueva base de datos (por ejemplo: `miusuario_laromana`).
+3. Crea un nuevo usuario MySQL y asígnale una contraseña segura.
+4. En la sección "Añadir usuario a la base de datos", vincula el usuario a la base
+   de datos y marca la casilla "TODOS LOS PRIVILEGIOS" (ALL PRIVILEGES).
+5. Abre la herramienta **phpMyAdmin** desde tu cPanel.
+6. Selecciona en el menú lateral la base de datos creada.
+7. Haz clic en la pestaña superior **"Importar"**.
+8. Selecciona el archivo `database_la_romana.sql` y presiona **"Continuar"** / **"Importar"**.
+
+--------------------------------------------------------------------------------
+PASO 3: CONFIGURAR CREDENCIALES EN backend/db.php
+--------------------------------------------------------------------------------
+1. Desde el Administrador de Archivos de tu cPanel, abre para editar el archivo:
+   `/public_html/backend/db.php`
+2. Modifica las variables de conexión con los datos creados en el Paso 2:
+
+   ```php
+   $host = 'localhost';                      // Normalmente 'localhost' o '127.0.0.1'
+   $db   = 'miusuario_laromana';             // Nombre de tu base de datos en cPanel
+   $user = 'miusuario_dbuser';               // Usuario MySQL de cPanel
+   $pass = 'tu_contraseña_segura_aqui';      // Contraseña del usuario MySQL
+   ```
+3. Guarda los cambios.
+
+================================================================================
+4. CREDENCIALES DE ACCESO PREDETERMINADAS
+================================================================================
+Una vez desplegado el sistema, puedes iniciar sesión con las siguientes cuentas:
+
+A) ADMINISTRADOR (Back-Office y Liquidaciones):
+   - Correo: admin@laromana.cl
+   - Contraseña: admin123
+
+B) BARBEROS (POS y Agenda de Personal):
+   - Carlos (Master): carlos@laromana.cl | Clave: 123456
+   - Luis (Senior):   luis@laromana.cl   | Clave: 123456
+   - Pedro (Junior):  pedro@laromana.cl  | Clave: 123456
+
+C) CLIENTES (Portal de Fidelización):
+   - RUT: 12345678-9  | Clave: 123456
+   - RUT: 19123456-7  | Clave: 123456
+   - RUT: 18765432-1  | Clave: 123456
+
+================================================================================
+5. CONFIGURACIÓN DEL SERVIDOR (.htaccess)
+================================================================================
+El archivo `.htaccess` incluido se encarga de:
+1. Permitir que la aplicación React funcione como Single Page Application (SPA),
+   evitando errores 404 al recargar cualquier vista o ruta.
+2. Permitir el paso directo de solicitudes dirigidas a la API PHP (`/backend/*`).
+3. Servir imágenes y fuentes estáticas directamente.
+
+Contenido de `.htaccess`:
+```apache
+<IfModule mod_rewrite.c>
+  RewriteEngine On
+  RewriteBase /
+
+  # Permitir acceso directo a backend y archivos estaticos
+  RewriteRule ^backend/ - [L]
+  RewriteRule ^assets/ - [L]
+  RewriteRule ^botones/ - [L]
+
+  # Si el archivo o directorio existe fisicamente, servirlo directo
+  RewriteCond %{REQUEST_FILENAME} -f [OR]
+  RewriteCond %{REQUEST_FILENAME} -d
+  RewriteRule ^ - [L]
+
+  # Todo lo demas se redirige a la Single Page App (index.html)
+  RewriteRule ^ index.html [L]
+</IfModule>
+```
+
+================================================================================
+6. CÓMO ACTUALIZAR EL DESPLIEGUE EN EL FUTURO
+================================================================================
+Cuando realices cambios en el código local y quieras generar una nueva versión
+lista para subir al hosting:
+
+1. Abre una terminal de PowerShell en la raíz del proyecto.
+2. Ejecuta el script automatizado:
+   ```powershell
+   .\prepare_deploy.ps1
+   ```
+3. El script automáticamente:
+   - Compilará y minificará el Frontend con Vite.
+   - Sincronizará la carpeta `deploy/` y `webhost_deploy/`.
+   - Copiará los archivos PHP del backend.
+   - Exportará la base de datos actualizada en `database_la_romana.sql`.
+   - Incluirá este archivo de instrucciones.
+4. Sube únicamente los archivos modificados o vuelve a reemplazar el contenido de
+   `public_html/` (recordando conservar tus credenciales en `backend/db.php`).
+
+================================================================================
+                             SISTEMA LISTO PARA PRODUCCIÓN
+================================================================================

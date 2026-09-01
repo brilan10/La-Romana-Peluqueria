@@ -1,0 +1,25 @@
+﻿# .htaccess para La Romana Peluqueria / Barberia
+<IfModule mod_rewrite.c>
+  RewriteEngine On
+  RewriteBase /
+
+  # Permitir acceso directo a backend y archivos estaticos
+  RewriteRule ^backend/ - [L]
+  RewriteRule ^assets/ - [L]
+  RewriteRule ^botones/ - [L]
+
+  # Si el archivo o directorio existe fisicamente, servirlo directo
+  RewriteCond %{REQUEST_FILENAME} -f [OR]
+  RewriteCond %{REQUEST_FILENAME} -d
+  RewriteRule ^ - [L]
+
+  # Todo lo demas se redirige a la Single Page App (index.html)
+  RewriteRule ^ index.html [L]
+</IfModule>
+
+# Seguridad y tipos MIME
+AddDefaultCharset UTF-8
+<IfModule mod_headers.c>
+  Header set X-Content-Type-Options "nosniff"
+  Header set X-Frame-Options "SAMEORIGIN"
+</IfModule>
